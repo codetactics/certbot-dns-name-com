@@ -16,9 +16,9 @@ class NameComDNS:
 
         self.domain_name = domain_name
         self.base_url = 'https://api.name.com/v4/domains/{0}/records'.format(self.domain_name)
-		
-		self.username = username
-		self.token = token
+
+        self.username = username
+        self.token = token
 
     def list_records(self):
         r = requests.get(self.base_url, auth=(self.username, self.token))
@@ -41,14 +41,11 @@ class NameComDNS:
 
 if __name__ == '__main__':
     config = configparser.ConfigParser()
-    config.read(os.path.join(os.path.dirname(__file__), '.env'))
 
-    if 'auth' not in config or 'username' not in config['auth'] or 'token' not in config['auth']:
-        print('Create ".env" file and add "username", "token" to "auth" section')
-        sys.exit()
-
+    # Get Arguments
     file_name, cmd, certbot_domain, certbot_validation = sys.argv
 
+    # Parse Domain
     splitted_domain = certbot_domain.split('.')
 
     # wildcard domains
@@ -60,6 +57,21 @@ if __name__ == '__main__':
 
     host = '_acme-challenge'
     fqdn = '{0}.{1}'.format(host, top_level_domain)
+
+    # Parse Configuration (.env file or folder of files per certificate)
+    environmentPath = os.path.join(os.path.dirname(__file__), '.env')
+
+    if os.path.isfile(environmentPath):
+        config.read(environmentPath)
+    else:
+        config.read(os.path.join(environmentPath, '{0}.env'.format(top_level_domain)))
+
+    if 'auth' not in config or 'username' not in config['auth'] or 'token' not in config['auth']:
+        print('Create ".env" file and add "username", "token" to "auth" section')
+        sys.exit()
+
+
+    # Create DNS TXT Record
 
     if low_level_domain:
         fqdn = '{0}.{1}.{2}'.format(host, low_level_domain, top_level_domain)
